@@ -2,7 +2,7 @@
 
 A Chrome extension that generates strong, customizable passwords with built-in password history and encryption.
 
-![Extension Banner](screenshots/banner.png)
+![Extension Banner](screenshots/banner-extension.png)
 
 ## Features
 
@@ -20,7 +20,7 @@ A Chrome extension that generates strong, customizable passwords with built-in p
 | ![Light Theme](screenshots/light-theme.png) | ![Dark Theme](screenshots/dark-theme.png) |
 
 ### Password Generation
-![Password Generation](screenshots/password-generation.gif)
+![Password Generation](screenshots/password-generation.png)
 
 ### Settings Panel
 ![Settings](screenshots/settings.png)
@@ -33,7 +33,7 @@ A Chrome extension that generates strong, customizable passwords with built-in p
 3. The extension will be installed and appear in your extensions toolbar
 
 ### Manual Installation
-1. Download the latest release from the [Releases page](https://github.com/yourusername/secure-password-generator/releases)
+1. Download the latest release from the [Releases page](https://github.com/sirdree/Secure-Password-Generator_Chrome/releases/tag/v.1)
 2. Unzip the file
 3. Open Chrome and go to `chrome://extensions/`
 4. Enable "Developer Mode" in the top-right corner
@@ -133,7 +133,7 @@ secure-password-generator/
 
 1. Clone this repository:
    ```
-   git clone https://github.com/yourusername/secure-password-generator.git
+   git clone https://github.com/sirdree/Secure-Password-Generator_Chrome.git
    ```
 
 2. Open Chrome and navigate to `chrome://extensions/`
@@ -173,3 +173,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 Made with ❤️ by [Ervin]
+
+## Do you like my work? Consider supporting me...
+
+[Support me via PayPal](https://www.paypal.com/donate/?hosted_button_id=GJGXEPFP2SWFW)
+
+- or 
+
+![using this qr code](screenshots/donate_qr_code.png)
