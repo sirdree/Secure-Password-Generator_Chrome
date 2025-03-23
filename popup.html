@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Generator</title>
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/css/fontawesome.min.css">
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="stylesheet" href="assets/css/theme.css">
+</head>
+
+<body class="theme-light color-blue">
+    <div class="main-card">
+      <div class="container">
+        <div class="tabs">
+          <button class="tab-button active" data-tab="generator"><i class="fas fa-key"></i></button>
+          <button class="tab-button" data-tab="history"><i class="fas fa-history"></i></button>
+          <button class="tab-button" data-tab="settings"><i class="fas fa-cog"></i></button>
+          <button class="tab-button" data-tab="about"><i class="fas fa-info"></i></button>
+        </div>
+  
+        <div class="tab-content">
+          <!-- Generator Tab -->
+          <div class="tab-pane active" id="generator">
+            <h2>Password Generator</h2>
+            
+            <div class="option-group">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="lowercase" checked>
+                <label class="form-check-label" for="lowercase">Lowercase letters</label>
+              </div>
+            </div>
+  
+            <div class="option-group">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="uppercase" checked>
+                <label class="form-check-label" for="uppercase">Uppercase letters</label>
+              </div>
+            </div>
+  
+            <div class="option-group">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="numbers" checked>
+                <label class="form-check-label" for="numbers">Numbers</label>
+              </div>
+            </div>
+  
+            <div class="option-group">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="custom">
+                <label class="form-check-label" for="custom">Custom characters</label>
+              </div>
+              <div class="custom-chars-container" id="customCharsContainer" style="display: none;">
+                <input type="text" class="form-control form-control-sm" id="customChars" placeholder="Enter custom characters">
+              </div>
+            </div>
+  
+            <div class="option-group length-container">
+              <div class="length-input">
+                <label for="length">Length:</label>
+                <input type="number" class="form-control form-control-sm" id="length" min="12" max="36" value="16">
+              </div>
+              <div class="random-checkbox">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="randomLength">
+                  <label class="form-check-label" for="randomLength">Random</label>
+                </div>
+              </div>
+            </div>
+  
+            <button id="generateBtn" class="btn btn-success btn-sm w-100">Generate Password</button>
+  
+            <div class="password-result">
+              <input type="text" class="form-control form-control-sm" id="passwordOutput" readonly>
+              <button id="copyBtn" class="btn btn-primary btn-sm copy-btn" title="Copy to clipboard">
+                <i class="fas fa-copy"></i>
+              </button>
+            </div>
+          </div>
+  
+          <!-- History Tab -->
+          <div class="tab-pane" id="history">
+            <h2>Password History</h2>
+            <div class="history-list" id="historyList">
+              <!-- History items will be added here dynamically -->
+              <p class="empty-history">No password history yet.</p>
+            </div>
+          </div>
+  
+          <!-- Settings Tab -->
+          <div class="tab-pane" id="settings">
+            <h2>Settings</h2>
+            <div class="settings-content">
+              <div class="accordion" id="settingsAccordion">
+                <!-- Security Settings -->
+                <div class="accordion-item">
+                  <h2 class="accordion-header" id="securityHeading">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#securitySettings" aria-expanded="false" aria-controls="securitySettings">
+                      Security
+                    </button>
+                  </h2>
+                  <div id="securitySettings" class="accordion-collapse collapse" aria-labelledby="securityHeading" data-bs-parent="#settingsAccordion">
+                    <div class="accordion-body">
+                      <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" id="requireSpecialChars">
+                        <label class="form-check-label" for="requireSpecialChars">Require special characters</label>
+                      </div>
+                      <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" id="avoidAmbiguous">
+                        <label class="form-check-label" for="avoidAmbiguous">Avoid ambiguous characters (1,l,I,0,O)</label>
+                      </div>
+                      <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" id="localEncryption">
+                        <label class="form-check-label" for="localEncryption">Encrypt stored passwords</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Defaults Settings -->
+                <div class="accordion-item">
+                  <h2 class="accordion-header" id="defaultsHeading">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#defaultsSettings" aria-expanded="false" aria-controls="defaultsSettings">
+                      Defaults
+                    </button>
+                  </h2>
+                  <div id="defaultsSettings" class="accordion-collapse collapse" aria-labelledby="defaultsHeading" data-bs-parent="#settingsAccordion">
+                    <div class="accordion-body">
+                      <div class="mb-2">
+                        <label for="defaultLength" class="form-label small">Default Password Length</label>
+                        <input type="number" class="form-control form-control-sm" id="defaultLength" min="12" max="36" value="16">
+                      </div>
+                      <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" id="defaultLowercase" checked>
+                        <label class="form-check-label" for="defaultLowercase">Lowercase by default</label>
+                      </div>
+                      <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" id="defaultUppercase" checked>
+                        <label class="form-check-label" for="defaultUppercase">Uppercase by default</label>
+                      </div>
+                      <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" id="defaultNumbers" checked>
+                        <label class="form-check-label" for="defaultNumbers">Numbers by default</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Auto-Copy Settings -->
+                <div class="accordion-item">
+                  <h2 class="accordion-header" id="autoCopyHeading">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#autoCopySettings" aria-expanded="false" aria-controls="autoCopySettings">
+                      Auto-Copy
+                    </button>
+                  </h2>
+                  <div id="autoCopySettings" class="accordion-collapse collapse" aria-labelledby="autoCopyHeading" data-bs-parent="#settingsAccordion">
+                    <div class="accordion-body">
+                      <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" id="autoCopy">
+                        <label class="form-check-label" for="autoCopy">Auto-copy to clipboard</label>
+                      </div>
+                      <div class="mb-2">
+                        <label for="clearClipboard" class="form-label small">Clear clipboard after</label>
+                        <select class="form-select form-select-sm" id="clearClipboard">
+                          <option value="0">Never</option>
+                          <option value="30">30 seconds</option>
+                          <option value="60">1 minute</option>
+                          <option value="300">5 minutes</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- History Settings -->
+                <div class="accordion-item">
+                  <h2 class="accordion-header" id="historyHeading">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#historySettings" aria-expanded="false" aria-controls="historySettings">
+                      History
+                    </button>
+                  </h2>
+                  <div id="historySettings" class="accordion-collapse collapse" aria-labelledby="historyHeading" data-bs-parent="#settingsAccordion">
+                    <div class="accordion-body">
+                      <div class="mb-2">
+                        <label for="historySize" class="form-label small">Number of passwords to store</label>
+                        <select class="form-select form-select-sm" id="historySize">
+                          <option value="5">5 passwords</option>
+                          <option value="10" selected>10 passwords</option>
+                          <option value="20">20 passwords</option>
+                          <option value="50">50 passwords</option>
+                        </select>
+                      </div>
+                      <div class="mb-2">
+                        <label for="autoClearHistory" class="form-label small">Auto-clear history</label>
+                        <select class="form-select form-select-sm" id="autoClearHistory">
+                          <option value="0">Never</option>
+                          <option value="1">After 1 day</option>
+                          <option value="7">After 7 days</option>
+                          <option value="30">After 30 days</option>
+                        </select>
+                      </div>
+                      <button class="btn btn-danger btn-sm mt-2" id="clearHistoryBtn">Clear All History Now</button>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Appearance Settings -->
+                <div class="accordion-item">
+                  <h2 class="accordion-header" id="appearanceHeading">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#appearanceSettings" aria-expanded="false" aria-controls="appearanceSettings">
+                      Appearance
+                    </button>
+                  </h2>
+                  <div id="appearanceSettings" class="accordion-collapse collapse" aria-labelledby="appearanceHeading" data-bs-parent="#settingsAccordion">
+                    <div class="accordion-body">
+                      <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="theme" id="lightTheme" value="light" checked>
+                        <label class="form-check-label" for="lightTheme">Light theme</label>
+                      </div>
+                      <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="theme" id="darkTheme" value="dark">
+                        <label class="form-check-label" for="darkTheme">Dark theme</label>
+                      </div>
+                      <div class="mb-2">
+                        <label for="colorTheme" class="form-label small">Color theme</label>
+                        <select class="form-select form-select-sm" id="colorTheme">
+                          <option value="blue" selected>Blue</option>
+                          <option value="green">Green</option>
+                          <option value="purple">Purple</option>
+                          <option value="red">Red</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <button class="btn btn-primary btn-sm mt-3 w-100" id="saveSettingsBtn">Save Settings</button>
+            </div>
+          </div>
+          
+          <!-- About Tab -->
+          <div class="tab-pane" id="about">
+            <h2>About</h2>
+            <div class="about-content">
+              <div class="app-info text-center mb-3">
+                <img src="icons/icon48.png" alt="Password Generator Logo" class="app-logo mb-2">
+                <h5 class="app-name">Password Generator</h5>
+                <span class="app-version">Version 1.0.0</span>
+              </div>
+              
+              <div class="app-details">
+                <p class="small text-center mb-2">
+                  A secure, customizable password generator extension for Chrome.
+                </p>
+                
+                <div class="author-info text-center mb-3">
+                  <p class="mb-1"><strong>Created by:</strong> John Doe</p>
+                  <p class="mb-0 small">
+                    <a href="mailto:developer@example.com" class="text-decoration-none">
+                      <i class="fas fa-envelope me-1"></i>developer@example.com
+                    </a>
+                  </p>
+                </div>
+                
+                <div class="support-links text-center">
+                  <a href="https://example.com/donate" class="btn btn-sm btn-outline-primary mb-2" target="_blank">
+                    <i class="fas fa-heart me-1"></i> Support This Project
+                  </a>
+                  <a href="https://github.com/username/password-generator" class="btn btn-sm btn-outline-secondary mb-2" target="_blank">
+                    <i class="fab fa-github me-1"></i> GitHub Repository
+                  </a>
+                  <!-- <a href="https://example.com/help" class="btn btn-sm btn-outline-info" target="_blank">
+                    <i class="fas fa-question-circle me-1"></i> Help & Documentation
+                  </a> -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="assets/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/js/accordion.js"></script>
+    <script src="assets/js/encryption.js"></script>
+    <script src="assets/js/popup.js"></script>
+  </body>
+</html>
