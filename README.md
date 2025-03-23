@@ -178,6 +178,6 @@ Made with ❤️ by [Ervin]
 
 [Support me via PayPal](https://www.paypal.com/donate/?hosted_button_id=GJGXEPFP2SWFW)
 
-- or 
+- or using this QR Code
 
 ![using this qr code](screenshots/donate_qr_code.png)
