@@ -28,11 +28,11 @@ A Chrome extension that generates strong, customizable passwords with built-in p
 ## Installation
 
 ### Chrome Web Store
-1. Visit the [Chrome Web Store](https://chrome.google.com/webstore) (link will be updated once published)
+1. Visit the [Chrome Web Store](https://chromewebstore.google.com/detail/perfect-password-generato/iinlllpojdhmlapkkhnmiclnfddiagmh) - Approved :)
 2. Click "Add to Chrome"
 3. The extension will be installed and appear in your extensions toolbar
 
-### Manual Installation
+### Manual Installation - For test purpose if needed
 1. Download the latest release from the [Releases page](https://github.com/sirdree/Secure-Password-Generator_Chrome/releases/tag/v.1)
 2. Unzip the file
 3. Open Chrome and go to `chrome://extensions/`
@@ -113,7 +113,7 @@ secure-password-generator/
 │   ├── js/                             # JavaScript files
 │   │   ├── popup.js
 │   │   ├── encryption.js
-│   │   └── accordion-fix.js
+│   │   └── accordion.js
 │   └── webfonts/                       # Font Awesome webfonts
 ├── popup.html                          # Main extension interface
 ├── bootstrap-init.js                   # Bootstrap initialization
