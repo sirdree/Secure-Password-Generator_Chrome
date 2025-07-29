@@ -40,6 +40,10 @@ body.theme-light {
     border-color: #3498db;
   }
   
+  body.theme-dark .container {
+    background-color: #2c3e50;
+  }
+  
   body.theme-dark .tab-content {
     background-color: #2c3e50;
   }
@@ -102,6 +106,30 @@ body.theme-light {
   
   body.theme-dark .app-version {
     color: #bdc3c7;
+  }
+  
+  /* Dark theme tab styling for better visibility */
+  body.theme-dark .tabs {
+    background-color: #2c3e50;
+    border-bottom: 1px solid #516a82;
+  }
+  
+  body.theme-dark .tab-button {
+    background-color: #34495e;
+    color: #bdc3c7;
+    border: 1px solid #516a82;
+  }
+  
+  body.theme-dark .tab-button:hover {
+    background-color: #4a6074;
+    color: #ecf0f1;
+  }
+  
+  body.theme-dark .tab-button.active {
+    background-color: #2980b9;
+    color: white;
+    border-color: #3498db;
+    box-shadow: 0 0 0 1px #3498db;
   }
   
   /* Color themes */
@@ -180,4 +208,34 @@ body.theme-light {
   
   body.color-red .main-card {
     border-color: #e74c3c;
+  }
+  
+  /* Dark theme color overrides for better tab visibility */
+  
+  /* Blue theme in dark mode */
+  body.theme-dark.color-blue .tab-button.active {
+    background-color: #2980b9;
+    border-color: #3498db;
+    box-shadow: 0 0 0 1px #3498db;
+  }
+  
+  /* Green theme in dark mode */
+  body.theme-dark.color-green .tab-button.active {
+    background-color: #27ae60;
+    border-color: #2ecc71;
+    box-shadow: 0 0 0 1px #2ecc71;
+  }
+  
+  /* Purple theme in dark mode */
+  body.theme-dark.color-purple .tab-button.active {
+    background-color: #8e44ad;
+    border-color: #9b59b6;
+    box-shadow: 0 0 0 1px #9b59b6;
+  }
+  
+  /* Red theme in dark mode */
+  body.theme-dark.color-red .tab-button.active {
+    background-color: #c0392b;
+    border-color: #e74c3c;
+    box-shadow: 0 0 0 1px #e74c3c;
   }

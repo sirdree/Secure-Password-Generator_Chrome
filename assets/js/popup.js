@@ -1,112 +1,255 @@
+// Default settings configuration (inline to avoid service worker issues)
+const DEFAULT_SETTINGS = {
+  security: {
+    requireSpecialChars: false,
+    avoidAmbiguous: false,
+    localEncryption: false
+  },
+  defaults: {
+    defaultLength: 18,
+    defaultLowercase: true,
+    defaultUppercase: true,
+    defaultNumbers: true,
+    defaultCustom: false,
+    defaultCustomChars: '!@#$%^&*()+-=?{}',
+    randomLengthMin: 18,
+    randomLengthMax: 25
+  },
+  autoCopy: {
+    autoCopy: false,
+    clearClipboard: 0
+  },
+  history: {
+    historySize: 10,
+    autoClearHistory: 0
+  },
+  appearance: {
+    theme: 'light',
+    colorTheme: 'blue'
+  }
+};
+
 // Make sure all code runs only after DOM is fully loaded
 document.addEventListener('DOMContentLoaded', function() {
-  // DOM Elements
-  const tabButtons = document.querySelectorAll('.tab-button');
-  const tabPanes = document.querySelectorAll('.tab-pane');
+  // Initialize modules
+  const generator = new window.PasswordGenerator();
+  const storage = new window.StorageManager();
+  const defaultSettings = DEFAULT_SETTINGS;
   
-  // Password Generator Elements
-  const lowercaseCheckbox = document.getElementById('lowercase');
-  const uppercaseCheckbox = document.getElementById('uppercase');
-  const numbersCheckbox = document.getElementById('numbers');
-  const customCheckbox = document.getElementById('custom');
-  const customCharsContainer = document.getElementById('customCharsContainer');
-  const customCharsInput = document.getElementById('customChars');
-  const lengthInput = document.getElementById('length');
-  const randomLengthCheckbox = document.getElementById('randomLength');
-  const generateBtn = document.getElementById('generateBtn');
-  const passwordOutput = document.getElementById('passwordOutput');
-  const copyBtn = document.getElementById('copyBtn');
-  const historyList = document.getElementById('historyList');
-  
-  // Settings Elements
-  const saveSettingsBtn = document.getElementById('saveSettingsBtn');
-  const clearHistoryBtn = document.getElementById('clearHistoryBtn');
-  
-  // Default settings
-  const defaultSettings = {
-    security: {
-      requireSpecialChars: false,
-      avoidAmbiguous: false,
-      localEncryption: false
-    },
-    defaults: {
-      defaultLength: 16,
-      defaultLowercase: true,
-      defaultUppercase: true,
-      defaultNumbers: true
-    },
-    autoCopy: {
-      autoCopy: false,
-      clearClipboard: 0
-    },
-    history: {
-      historySize: 10,
-      autoClearHistory: 0
-    },
-    appearance: {
-      theme: 'light',
-      colorTheme: 'blue'
-    }
+  // Cache DOM Elements for better performance
+  const elements = {
+    // Tab elements
+    tabButtons: document.querySelectorAll('.tab-button'),
+    tabPanes: document.querySelectorAll('.tab-pane'),
+    
+    // Password Generator Elements
+    lowercaseCheckbox: document.getElementById('lowercase'),
+    uppercaseCheckbox: document.getElementById('uppercase'),
+    numbersCheckbox: document.getElementById('numbers'),
+    customCheckbox: document.getElementById('custom'),
+    customCharsContainer: document.getElementById('customCharsContainer'),
+    customCharsInput: document.getElementById('customChars'),
+    lengthInput: document.getElementById('length'),
+    randomLengthCheckbox: document.getElementById('randomLength'),
+    generateBtn: document.getElementById('generateBtn'),
+    passwordOutput: document.getElementById('passwordOutput'),
+    copyBtn: document.getElementById('copyBtn'),
+    historyList: document.getElementById('historyList'),
+    
+    // Strength indicator elements
+    passwordStrength: document.getElementById('passwordStrength'),
+    strengthFill: document.getElementById('strengthFill'),
+    strengthText: document.getElementById('strengthText'),
+    
+    // Settings Elements
+    saveSettingsBtn: document.getElementById('saveSettingsBtn'),
+    clearHistoryBtn: document.getElementById('clearHistoryBtn')
   };
   
-  // Character sets
-  const lowercaseChars = 'abcdefghijklmnopqrstuvwxyz';
-  const uppercaseChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  const numberChars = '0123456789';
-  const specialChars = '!@#$%^&*()_+~`|}{[]:;?><,./-=';
-  const ambiguousChars = '1lI0O';
-  
   // Tab switching functionality
-  tabButtons.forEach(button => {
+  elements.tabButtons.forEach(button => {
     button.addEventListener('click', function() {
       // Get the tab id from data-tab attribute
       const tabId = this.getAttribute('data-tab');
       
       // Update active tab button
-      tabButtons.forEach(btn => btn.classList.remove('active'));
+      elements.tabButtons.forEach(btn => btn.classList.remove('active'));
       this.classList.add('active');
       
       // Update active tab pane
-      tabPanes.forEach(pane => pane.classList.remove('active'));
+      elements.tabPanes.forEach(pane => pane.classList.remove('active'));
       document.getElementById(tabId).classList.add('active');
       
       // If switching to history tab, update history display
       if (tabId === 'history') {
-        chrome.storage.local.get(['passwordHistory', 'settings'], function(result) {
-          updateHistoryDisplay(result.passwordHistory || [], result.settings || defaultSettings);
-        });
+        updateHistoryDisplay();
       }
     });
   });
   
   // Show/hide custom chars input based on checkbox
-  customCheckbox.addEventListener('change', function() {
-    customCharsContainer.style.display = this.checked ? 'block' : 'none';
+  elements.customCheckbox.addEventListener('change', function() {
+    console.log('🔄 Custom checkbox changed:', {
+      checked: this.checked,
+      willShow: this.checked ? 'block' : 'none',
+      trigger: 'user interaction or programmatic'
+    });
+    elements.customCharsContainer.style.display = this.checked ? 'block' : 'none';
   });
   
   // Handle random length checkbox
-  randomLengthCheckbox.addEventListener('change', function() {
+  elements.randomLengthCheckbox.addEventListener('change', async function() {
     if (this.checked) {
-      const randomLen = Math.floor(Math.random() * (20 - 16 + 1)) + 16;
-      lengthInput.value = randomLen;
-      lengthInput.disabled = true;
+      // Get current settings for random length range
+      const settings = await storage.getSettings();
+      const min = settings.defaults.randomLengthMin || 18;
+      const max = settings.defaults.randomLengthMax || 25;
+      const randomLen = Math.floor(Math.random() * (max - min + 1)) + min;
+      elements.lengthInput.value = randomLen;
+      elements.lengthInput.disabled = true;
     } else {
-      lengthInput.disabled = false;
+      elements.lengthInput.disabled = false;
+    }
+  });
+
+  // Add input validation for length
+  elements.lengthInput.addEventListener('input', window.Utils.debounce(function() {
+    const value = parseInt(this.value, 10);
+    if (isNaN(value) || value < 12 || value > 36) {
+      this.style.borderColor = '#ff4444';
+      this.title = 'Length must be between 12 and 36 characters';
+    } else {
+      this.style.borderColor = '';
+      this.title = '';
+    }
+  }, 300));
+
+  // Sanitize custom character input
+  elements.customCharsInput.addEventListener('input', function() {
+    this.value = window.Utils.sanitizeInput(this.value);
+  });
+
+  // Add validation for random length min/max fields (with null checks)
+  const randomLengthMinElement = document.getElementById('randomLengthMin');
+  const randomLengthMaxElement = document.getElementById('randomLengthMax');
+  
+  if (randomLengthMinElement) {
+    randomLengthMinElement.addEventListener('input', window.Utils.debounce(function() {
+      const min = parseInt(this.value, 10);
+      const maxElement = document.getElementById('randomLengthMax');
+      const max = maxElement ? parseInt(maxElement.value, 10) : NaN;
+      
+      if (isNaN(min) || min < 12 || min > 36) {
+        this.style.borderColor = '#ff4444';
+        this.title = 'Min length must be between 12 and 36';
+      } else if (!isNaN(max) && min > max) {
+        this.style.borderColor = '#ff4444';
+        this.title = 'Min length cannot be greater than max length';
+      } else {
+        this.style.borderColor = '';
+        this.title = '';
+      }
+    }, 300));
+  }
+
+  if (randomLengthMaxElement) {
+    randomLengthMaxElement.addEventListener('input', window.Utils.debounce(function() {
+      const max = parseInt(this.value, 10);
+      const minElement = document.getElementById('randomLengthMin');
+      const min = minElement ? parseInt(minElement.value, 10) : NaN;
+      
+      if (isNaN(max) || max < 12 || max > 36) {
+        this.style.borderColor = '#ff4444';
+        this.title = 'Max length must be between 12 and 36';
+      } else if (!isNaN(min) && max < min) {
+        this.style.borderColor = '#ff4444';
+        this.title = 'Max length cannot be less than min length';
+      } else {
+        this.style.borderColor = '';
+        this.title = '';
+      }
+    }, 300));
+  }
+
+  // Handle default custom characters checkbox (with null check)
+  const defaultCustomElement = document.getElementById('defaultCustom');
+  if (defaultCustomElement) {
+    defaultCustomElement.addEventListener('change', function() {
+      const container = document.getElementById('defaultCustomCharsContainer');
+      if (container) {
+        container.style.display = this.checked ? 'block' : 'none';
+      }
+    });
+  }
+
+  // Sanitize default custom characters input (with null check)
+  const defaultCustomCharsElement = document.getElementById('defaultCustomChars');
+  if (defaultCustomCharsElement) {
+    defaultCustomCharsElement.addEventListener('input', function() {
+      this.value = window.Utils.sanitizeInput(this.value);
+    });
+  }
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', function(e) {
+    // Ctrl/Cmd + G to generate password
+    if ((e.ctrlKey || e.metaKey) && e.key === 'g') {
+      e.preventDefault();
+      elements.generateBtn.click();
+    }
+    
+    // Ctrl/Cmd + C to copy password (when password output is focused)
+    if ((e.ctrlKey || e.metaKey) && e.key === 'c' && document.activeElement === elements.passwordOutput) {
+      e.preventDefault();
+      elements.copyBtn.click();
+    }
+    
+    // Escape to clear password
+    if (e.key === 'Escape') {
+      elements.passwordOutput.value = '';
+      elements.passwordStrength.style.display = 'none';
+    }
+    
+    // Tab navigation between tabs (1-4)
+    if (e.key >= '1' && e.key <= '4' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      const tabIndex = parseInt(e.key) - 1;
+      if (elements.tabButtons[tabIndex]) {
+        elements.tabButtons[tabIndex].click();
+      }
     }
   });
   
   // Generate password
-  generateBtn.addEventListener('click', function() {
-    const password = generatePassword();
-    if (password) {
-      passwordOutput.value = password;
+  elements.generateBtn.addEventListener('click', async function() {
+    try {
+      const options = {
+        lowercase: elements.lowercaseCheckbox.checked,
+        uppercase: elements.uppercaseCheckbox.checked,
+        numbers: elements.numbersCheckbox.checked,
+        custom: elements.customCheckbox.checked,
+        customChars: elements.customCharsInput.value,
+        length: elements.lengthInput.value,
+        randomLength: elements.randomLengthCheckbox.checked
+      };
       
-      // Add to history
-      saveToHistory(password);
-      
-      // Auto-copy if enabled
-      chrome.storage.local.get(['settings'], function(result) {
-        const settings = result.settings || defaultSettings;
+      const password = await generator.generate(options);
+      if (password) {
+        elements.passwordOutput.value = password;
+        
+        // Update length input if random was used
+        if (options.randomLength) {
+          elements.lengthInput.value = password.length;
+        }
+        
+        // Show password strength
+        updatePasswordStrength(password);
+        
+        // Add to history
+        await storage.saveToHistory(password);
+        
+        // Auto-copy if enabled
+        const settings = await storage.getSettings();
         if (settings.autoCopy.autoCopy) {
           copyToClipboard(password);
           
@@ -114,18 +257,23 @@ document.addEventListener('DOMContentLoaded', function() {
           const clearAfter = parseInt(settings.autoCopy.clearClipboard);
           if (clearAfter > 0) {
             setTimeout(() => {
-              navigator.clipboard.writeText('');
+              navigator.clipboard.writeText('').catch(err => 
+                console.error('Failed to clear clipboard:', err)
+              );
             }, clearAfter * 1000);
           }
         }
-      });
+      }
+    } catch (error) {
+      console.error('Password generation failed:', error);
+      alert(error.message || 'Failed to generate password. Please try again.');
     }
   });
   
   // Copy password to clipboard
-  copyBtn.addEventListener('click', function() {
-    if (passwordOutput.value) {
-      copyToClipboard(passwordOutput.value);
+  elements.copyBtn.addEventListener('click', function() {
+    if (elements.passwordOutput.value) {
+      copyToClipboard(elements.passwordOutput.value);
     }
   });
   
@@ -134,242 +282,117 @@ document.addEventListener('DOMContentLoaded', function() {
     navigator.clipboard.writeText(text)
       .then(() => {
         // Visual feedback for copy success
-        copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+        elements.copyBtn.innerHTML = '<i class="fas fa-check"></i>';
         setTimeout(() => {
-          copyBtn.innerHTML = '<i class="fas fa-copy"></i>';
+          elements.copyBtn.innerHTML = '<i class="fas fa-copy"></i>';
         }, 1000);
       })
       .catch(err => {
         console.error('Failed to copy text: ', err);
       });
   }
-  
-  // Generate password function
-  function generatePassword() {
-    // Validate at least one character set is selected
-    if (!lowercaseCheckbox.checked && 
-        !uppercaseCheckbox.checked && 
-        !numbersCheckbox.checked && 
-        !(customCheckbox.checked && customCharsInput.value.trim() !== '')) {
-      alert('Please select at least one character set!');
-      return '';
+
+  // Update password strength indicator
+  function updatePasswordStrength(password) {
+    if (!password) {
+      elements.passwordStrength.style.display = 'none';
+      return;
     }
-    
-    // Get settings
-    let settings;
-    try {
-      const storedSettings = JSON.parse(localStorage.getItem('settings')) || defaultSettings;
-      settings = storedSettings;
-    } catch (e) {
-      settings = defaultSettings;
-    }
-    
-    // Determine character set to use
-    let chars = '';
-    if (lowercaseCheckbox.checked) chars += lowercaseChars;
-    if (uppercaseCheckbox.checked) chars += uppercaseChars;
-    if (numbersCheckbox.checked) chars += numberChars;
-    
-    // Add special characters if required in settings
-    if (settings.security && settings.security.requireSpecialChars) {
-      chars += specialChars;
-    }
-    
-    // Add custom characters if specified
-    if (customCheckbox.checked && customCharsInput.value.trim() !== '') {
-      chars += customCharsInput.value.trim();
-    }
-    
-    // Remove ambiguous characters if set in settings
-    if (settings.security && settings.security.avoidAmbiguous) {
-      chars = Array.from(chars).filter(char => !ambiguousChars.includes(char)).join('');
-    }
-    
-    // Determine password length
-    let passLength;
-    passLength = parseInt(lengthInput.value, 10);
-    
-    // Validate length value
-    if (isNaN(passLength) || passLength < 12 || passLength > 36) {
-      passLength = 16; // Default if invalid
-      lengthInput.value = passLength;
-    }
-    
-    // Update random length if needed
-    if (randomLengthCheckbox.checked) {
-      const randomLen = Math.floor(Math.random() * (20 - 16 + 1)) + 16;
-      lengthInput.value = randomLen;
-      passLength = randomLen;
-    }
-    
-    // Generate password
-    let password = '';
-    
-    // Ensure inclusion of at least one character from each selected set
-    if (lowercaseCheckbox.checked) {
-      password += lowercaseChars.charAt(Math.floor(Math.random() * lowercaseChars.length));
-    }
-    if (uppercaseCheckbox.checked) {
-      password += uppercaseChars.charAt(Math.floor(Math.random() * uppercaseChars.length));
-    }
-    if (numbersCheckbox.checked) {
-      password += numberChars.charAt(Math.floor(Math.random() * numberChars.length));
-    }
-    
-    // Add a special character if required
-    if (settings.security && settings.security.requireSpecialChars) {
-      password += specialChars.charAt(Math.floor(Math.random() * specialChars.length));
-    }
-    
-    // Add a custom character if specified
-    if (customCheckbox.checked && customCharsInput.value.trim() !== '') {
-      const customChars = customCharsInput.value.trim();
-      password += customChars.charAt(Math.floor(Math.random() * customChars.length));
-    }
-    
-    // Fill remaining length with random characters
-    for (let i = password.length; i < passLength; i++) {
-      const randomIndex = Math.floor(Math.random() * chars.length);
-      password += chars.charAt(randomIndex);
-    }
-    
-    // Shuffle the password characters
-    password = shuffleString(password);
-    
-    return password;
-  }
-  
-  // Shuffle string function
-  function shuffleString(str) {
-    const array = str.split('');
-    for (let i = array.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array.join('');
-  }
-  
-  // Save password to history
-  async function saveToHistory(password) {
-    // Get existing history and settings
-    chrome.storage.local.get(['passwordHistory', 'settings'], async function(result) {
-      let history = result.passwordHistory || [];
-      const settings = result.settings || defaultSettings;
-      const historySize = parseInt(settings.history.historySize) || 10;
-      
-      // Prepare the password entry
-      let passwordEntry = {
-        password: password,
-        timestamp: new Date().toISOString()
-      };
-      
-      // Encrypt the password if encryption is enabled
-      if (settings.security.localEncryption) {
-        const encryptedPassword = await encryptPassword(password);
-        if (encryptedPassword) {
-          passwordEntry.password = encryptedPassword;
-          passwordEntry.encrypted = true;
-        }
-      }
-      
-      // Add new password to the beginning of history
-      history.unshift(passwordEntry);
-      
-      // Limit history size based on settings
-      if (history.length > historySize) {
-        history = history.slice(0, historySize);
-      }
-      
-      // Save updated history
-      chrome.storage.local.set({ passwordHistory: history });
-    });
+
+    const strength = window.Utils.calculatePasswordStrength(password);
+    elements.passwordStrength.style.display = 'block';
+    elements.strengthFill.style.width = `${(strength.score / 9) * 100}%`;
+    elements.strengthFill.style.backgroundColor = strength.color;
+    elements.strengthText.textContent = strength.text;
+    elements.strengthText.style.color = strength.color;
   }
   
   // Update history display
-  async function updateHistoryDisplay(history, settings) {
-    historyList.innerHTML = '';
-    
-    if (history.length === 0) {
-      historyList.innerHTML = '<p class="empty-history">No password history yet.</p>';
-      return;
-    }
-    
-    // Process each history item
-    for (let index = 0; index < history.length; index++) {
-      const item = history[index];
-      const historyItem = document.createElement('div');
-      historyItem.className = 'history-item';
+  async function updateHistoryDisplay() {
+    try {
+      const { history, settings } = await storage.getHistory();
+      elements.historyList.innerHTML = '';
       
-      // Format date
-      const date = new Date(item.timestamp);
-      const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
-      
-      // Get the password (decrypt if needed)
-      let password;
-      if (item.encrypted && isEncryptedData(item.password)) {
-        password = await decryptPassword(item.password);
-        if (!password) {
-          password = "[Decryption failed]";
-        }
-      } else {
-        password = item.password;
+      if (history.length === 0) {
+        elements.historyList.innerHTML = '<p class="empty-history">No password history yet.</p>';
+        return;
       }
       
-      historyItem.innerHTML = `
-        <div class="history-password" title="${password}">${password}</div>
-        <div class="history-actions">
-          <button class="history-copy-btn btn btn-sm" data-password="${password}" title="Copy password">
-            <i class="fas fa-copy"></i>
-          </button>
-          <button class="history-delete-btn btn btn-sm" data-index="${index}" title="Delete from history">
-            <i class="fas fa-trash"></i>
-          </button>
-        </div>
-      `;
-      
-      historyList.appendChild(historyItem);
-    }
-    
-    // Add event listeners to history item buttons
-    document.querySelectorAll('.history-copy-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
-        const password = this.getAttribute('data-password');
-        copyToClipboard(password);
-      });
-    });
-    
-    document.querySelectorAll('.history-delete-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
-        const index = parseInt(this.getAttribute('data-index'), 10);
+      // Process each history item
+      for (let index = 0; index < history.length; index++) {
+        const item = history[index];
+        const historyItem = document.createElement('div');
+        historyItem.className = 'history-item';
         
-        chrome.storage.local.get(['passwordHistory'], function(result) {
-          let history = result.passwordHistory || [];
-          
-          // Remove item at index
-          history.splice(index, 1);
-          
-          // Save updated history
-          chrome.storage.local.set({ passwordHistory: history }, function() {
-            // Update history display
-            chrome.storage.local.get(['settings'], function(result) {
-              updateHistoryDisplay(history, result.settings || defaultSettings);
-            });
-          });
+        // Format date
+        const date = new Date(item.timestamp);
+        const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+        
+        // Get the password (decrypt if needed)
+        let password;
+        if (item.encrypted && isEncryptedData(item.password)) {
+          password = await decryptPassword(item.password);
+          if (!password) {
+            password = "[Decryption failed]";
+          }
+        } else {
+          password = item.password;
+        }
+        
+        historyItem.innerHTML = `
+          <div class="history-password" title="${password}">${password}</div>
+          <div class="history-actions">
+            <button class="history-copy-btn btn btn-sm" data-password="${password}" title="Copy password">
+              <i class="fas fa-copy"></i>
+            </button>
+            <button class="history-delete-btn btn btn-sm" data-index="${index}" title="Delete from history">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        `;
+        
+        elements.historyList.appendChild(historyItem);
+      }
+      
+      // Add event listeners to history item buttons
+      document.querySelectorAll('.history-copy-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const password = this.getAttribute('data-password');
+          copyToClipboard(password);
         });
       });
-    });
+      
+      document.querySelectorAll('.history-delete-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+          const index = parseInt(this.getAttribute('data-index'), 10);
+          try {
+            await storage.deleteHistoryItem(index);
+            await updateHistoryDisplay(); // Refresh display
+          } catch (error) {
+            console.error('Failed to delete history item:', error);
+          }
+        });
+      });
+    } catch (error) {
+      console.error('Failed to update history display:', error);
+      elements.historyList.innerHTML = '<p class="empty-history">Failed to load history.</p>';
+    }
   }
   
   // Clear History Button
-  if (clearHistoryBtn) {
-    clearHistoryBtn.addEventListener('click', function() {
+  if (elements.clearHistoryBtn) {
+    elements.clearHistoryBtn.addEventListener('click', async function() {
       if (confirm('Are you sure you want to clear all password history?')) {
-        chrome.storage.local.set({ passwordHistory: [] }, function() {
+        try {
+          await storage.clearHistory();
           alert('Password history cleared successfully!');
           if (document.getElementById('history').classList.contains('active')) {
-            updateHistoryDisplay([]);
+            updateHistoryDisplay();
           }
-        });
+        } catch (error) {
+          console.error('Failed to clear history:', error);
+          alert('Failed to clear history. Please try again.');
+        }
       }
     });
   }
@@ -379,6 +402,11 @@ document.addEventListener('DOMContentLoaded', function() {
   // Load settings
   function loadSettings() {
     chrome.storage.local.get(['settings'], function(result) {
+      if (chrome.runtime.lastError) {
+        console.error('Failed to load settings:', chrome.runtime.lastError);
+        return;
+      }
+      
       const settings = result.settings || defaultSettings;
       
       // Security settings
@@ -404,6 +432,21 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       if (document.getElementById('defaultNumbers')) {
         document.getElementById('defaultNumbers').checked = settings.defaults.defaultNumbers;
+      }
+      if (document.getElementById('defaultCustom')) {
+        document.getElementById('defaultCustom').checked = settings.defaults.defaultCustom;
+        // Show/hide the custom characters container
+        const container = document.getElementById('defaultCustomCharsContainer');
+        container.style.display = settings.defaults.defaultCustom ? 'block' : 'none';
+      }
+      if (document.getElementById('defaultCustomChars')) {
+        document.getElementById('defaultCustomChars').value = settings.defaults.defaultCustomChars;
+      }
+      if (document.getElementById('randomLengthMin')) {
+        document.getElementById('randomLengthMin').value = settings.defaults.randomLengthMin;
+      }
+      if (document.getElementById('randomLengthMax')) {
+        document.getElementById('randomLengthMax').value = settings.defaults.randomLengthMax;
       }
       
       // Auto-copy settings
@@ -439,8 +482,8 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // Save settings
-  if (saveSettingsBtn) {
-    saveSettingsBtn.addEventListener('click', function() {
+  if (elements.saveSettingsBtn) {
+    elements.saveSettingsBtn.addEventListener('click', function() {
       const newSettings = {
         security: {
           requireSpecialChars: document.getElementById('requireSpecialChars').checked,
@@ -451,7 +494,11 @@ document.addEventListener('DOMContentLoaded', function() {
           defaultLength: parseInt(document.getElementById('defaultLength').value),
           defaultLowercase: document.getElementById('defaultLowercase').checked,
           defaultUppercase: document.getElementById('defaultUppercase').checked,
-          defaultNumbers: document.getElementById('defaultNumbers').checked
+          defaultNumbers: document.getElementById('defaultNumbers').checked,
+          defaultCustom: document.getElementById('defaultCustom').checked,
+          defaultCustomChars: document.getElementById('defaultCustomChars').value,
+          randomLengthMin: parseInt(document.getElementById('randomLengthMin').value),
+          randomLengthMax: parseInt(document.getElementById('randomLengthMax').value)
         },
         autoCopy: {
           autoCopy: document.getElementById('autoCopy').checked,
@@ -537,16 +584,36 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Save the new settings
         chrome.storage.local.set({ settings: newSettings }, function() {
+          if (chrome.runtime.lastError) {
+            console.error('Failed to save settings:', chrome.runtime.lastError);
+            // Show error message
+            const errorMsg = document.createElement('div');
+            errorMsg.className = 'alert alert-danger py-1 mt-2 mb-0 text-center';
+            errorMsg.textContent = 'Failed to save settings. Please try again.';
+            
+            const parent = elements.saveSettingsBtn.parentNode;
+            parent.insertBefore(errorMsg, elements.saveSettingsBtn.nextSibling);
+            
+            setTimeout(() => {
+              errorMsg.remove();
+            }, 3000);
+            return;
+          }
+          
           // Show success message
           const successMsg = document.createElement('div');
           successMsg.className = 'alert alert-success py-1 mt-2 mb-0 text-center';
           successMsg.textContent = 'Settings saved!';
           
-          const parent = saveSettingsBtn.parentNode;
-          parent.insertBefore(successMsg, saveSettingsBtn.nextSibling);
+          const parent = elements.saveSettingsBtn.parentNode;
+          parent.insertBefore(successMsg, elements.saveSettingsBtn.nextSibling);
           
           // Apply theme
           applyTheme(newSettings.appearance.theme, newSettings.appearance.colorTheme);
+          
+          // IMPORTANT: Apply the new default values to the main tab immediately
+          console.log('💾 Settings saved, applying new defaults to main tab...');
+          applyDefaultValues(newSettings);
           
           // Remove success message after 2 seconds
           setTimeout(() => {
@@ -572,19 +639,74 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Initialize
   function initialize() {
-    // Load settings
+    console.log('🚀 Starting initialization...');
+    
+    // Load settings first
     loadSettings();
     
-    // Apply defaults from settings
-    chrome.storage.local.get(['settings'], function(result) {
-      const settings = result.settings || defaultSettings;
+    // Then apply defaults from settings with a slight delay to ensure DOM is ready
+    setTimeout(() => {
+      chrome.storage.local.get(['settings'], function(result) {
+        if (chrome.runtime.lastError) {
+          console.error('Failed to load initial settings:', chrome.runtime.lastError);
+          applyDefaultValues(defaultSettings);
+          return;
+        }
+        
+        const settings = result.settings || defaultSettings;
+        console.log('📊 Loaded settings for initialization:', settings);
+        console.log('🎯 About to apply default values...');
+        applyDefaultValues(settings);
+      });
+    }, 50); // Small delay to ensure DOM elements are fully accessible
+  }
+
+  // Helper function to apply default values
+  function applyDefaultValues(settings) {
+    // Ensure we have all the required defaults (migration for existing users)
+    const safeSettings = {
+      ...settings,
+      defaults: {
+        ...defaultSettings.defaults,
+        ...settings.defaults
+      }
+    };
+    
+    // Apply basic default values
+    elements.lengthInput.value = safeSettings.defaults.defaultLength;
+    elements.lowercaseCheckbox.checked = safeSettings.defaults.defaultLowercase;
+    elements.uppercaseCheckbox.checked = safeSettings.defaults.defaultUppercase;
+    elements.numbersCheckbox.checked = safeSettings.defaults.defaultNumbers;
+    
+    if (safeSettings.defaults.defaultCustom && safeSettings.defaults.defaultCustomChars) {
+      elements.customCheckbox.checked = true;
+      elements.customCharsContainer.style.display = 'block';
+      elements.customCharsInput.value = safeSettings.defaults.defaultCustomChars;
       
-      // Apply default values
-      lengthInput.value = settings.defaults.defaultLength;
-      lowercaseCheckbox.checked = settings.defaults.defaultLowercase;
-      uppercaseCheckbox.checked = settings.defaults.defaultUppercase;
-      numbersCheckbox.checked = settings.defaults.defaultNumbers;
-    });
+      // Force trigger the change event to ensure UI is properly synced
+      const changeEvent = new Event('change', { bubbles: true });
+      elements.customCheckbox.dispatchEvent(changeEvent);
+      
+      
+    } else {
+      elements.customCheckbox.checked = false;
+      elements.customCharsContainer.style.display = 'none';
+      elements.customCharsInput.value = '';
+      
+      // Force trigger the change event
+      const changeEvent = new Event('change', { bubbles: true });
+      elements.customCheckbox.dispatchEvent(changeEvent);
+    }
+    
+    // Additional verification step
+    setTimeout(() => {
+      console.log('🔍 Post-apply verification:', {
+        checkboxChecked: elements.customCheckbox?.checked,
+        containerDisplay: elements.customCharsContainer?.style.display,
+        inputValue: elements.customCharsInput?.value,
+        settingsShouldEnable: safeSettings.defaults.defaultCustom && safeSettings.defaults.defaultCustomChars
+      });
+    }, 100);
   }
   
   // Initialize on load

@@ -1,4 +1,4 @@
-# Secure Password Generator
+# Secure Password Generator v1.3.1
 
 A Chrome extension that generates strong, customizable passwords with built-in password history and encryption.
 
@@ -111,9 +111,14 @@ secure-password-generator/
 │   │   ├── styles.css
 │   │   └── theme.css
 │   ├── js/                             # JavaScript files
-│   │   ├── popup.js
+│   │   ├── accordion.js
+│   │   ├── bootstrap.bundle.min.js
 │   │   ├── encryption.js
-│   │   └── accordion.js
+│   │   ├── generator.js
+│   │   ├── popup.js
+│   │   ├── settings.js
+│   │   ├── storage.js
+│   │   └── utils.js
 │   └── webfonts/                       # Font Awesome webfonts
 ├── popup.html                          # Main extension interface
 ├── bootstrap-init.js                   # Bootstrap initialization
@@ -128,6 +133,47 @@ secure-password-generator/
 - Chrome browser
 - Basic knowledge of HTML, CSS, and JavaScript
 - Text editor or IDE (VS Code recommended)
+
+## Changelogs
+
+Summary of Improvements and New Features
+
+  🐛 Bug Fixes
+
+  - Fixed accordion sections - Settings tabs can now be closed properly (removed conflicting accordion.js)
+  - Fixed variable reference error - Resolved "lengthInput is not defined" error
+  - Fixed service worker compatibility - Removed problematic settings.js file
+  - Fixed borderColor TypeError - Added null checks for DOM elements
+  - Fixed custom characters toggle sync - Settings now apply immediately without requiring extension restart
+
+  ✨ New Features
+
+  - Random Length Range Settings - Configure min/max values for random length (default: 18-25 characters)
+  - Custom Characters Default Setting - Enable custom characters by default with predefined special characters (!@#$%^&*()+-=?{})
+  - Real-time Settings Application - Changes in settings now apply immediately to the main tab interface
+
+  🎨 UI/UX Improvements
+
+  - Enhanced Dark Theme:
+    - Uniform dark background across entire container
+    - Distinguished tab borders with colored highlights for active tabs
+    - Better visual hierarchy and contrast
+    - Color theme integration (Blue, Green, Purple, Red) works seamlessly in dark mode
+  - Improved Settings Sync - Default values are applied instantly when saved
+  - Better Error Handling - Added comprehensive null checks and validation
+
+  🔧 Technical Improvements
+
+  - Modular Architecture - Better code organization and separation of concerns
+  - Performance Optimizations - Cached DOM elements and debounced input validation
+  - Enhanced Security - Better input sanitization and validation
+  - Improved Storage Management - More robust Chrome storage handling with error recovery
+
+  🚀 Enhanced Functionality
+
+  - Password Strength Indicator - Visual feedback with color-coded strength levels
+  - Keyboard Shortcuts - Added hotkeys for common actions (Ctrl+G to generate, etc.)
+  - Migration Support - Backward compatibility for existing users upgrading settings
 
 ### Setup for Development
 
